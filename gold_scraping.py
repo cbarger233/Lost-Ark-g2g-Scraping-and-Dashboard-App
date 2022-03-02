@@ -127,6 +127,7 @@ for link in links:
                 price = box.find('span', class_='offer-price-amount').text.strip()
                 price = re.sub(',', '', price)
                 price = float(price)
+                #some sellers have abnormally expensive prices listed, so this gets around that
                 if price > 1.2:
                     continue
             
@@ -144,10 +145,10 @@ driver.quit()
 df1 = pd.DataFrame(zip(dates, servers, regions, names, prices), columns=['date', 'server', 'region', 'name', 'price'])
 print(df1.head())
 
-if not os.path.isfile('.\\gold_info.csv'):
-    df1.to_csv('.\\gold_info.csv', header=True, index=False)
+if not os.path.isfile('.\\Dash Deployment\\gold_info.csv'):
+    df1.to_csv('.\\Dash Deployment\\gold_info.csv', header=True, index=False)
 else:
-    df1.to_csv('.\\gold_info.csv', mode='a', header=False, index=False)
+    df1.to_csv('.\\Dash Deployment\\gold_info.csv', mode='a', header=False, index=False)
 
 
 
@@ -180,16 +181,18 @@ region_mins = df.groupby(['region', 'date'])['price'].min().reset_index().rename
 region_info = pd.concat([region_means, region_mins], axis=1)
 region_info = region_info.loc[:,~region_info.columns.duplicated()]
 
+#write out current dataframes to files used in the application
+global_info.to_csv('.\\Dash Deployment\\global_info.csv')
+region_info.to_csv('.\\Dash Deployment\\region_info.csv')
+server_info.to_csv('.\\Dash Deployment\\server_info.csv')
 
-global_info.to_csv('global_info.csv')
-server_info.to_csv('server_info.csv')
-region_info.to_csv('region_info.csv')
-
-
+#create a dataframe which is to be used in the app for filtering by name to display historical pricing information
 names_df = df.groupby(['date', 'name'])['price'].count().reset_index().sort_values(by=['price', 'name', 'date'], ascending=False)
 historical_names_df = names_df.sort_values(by=['date'], ascending=True)
-historical_names_df.to_csv('names_historical.csv')
+historical_names_df.to_csv('.\\Dash Deployment\\names_historical.csv')
 
-current_names = names_df.drop_duplicates(subset=['name'])
+#create a dataframe to get the top sellers for the day by number of listings
+current_names = names_df.sort_values(by=['date'], ascending=False)
+current_names = current_names.drop_duplicates(subset=['name'], keep='first').sort_values(by=['price'], ascending=False)
 current_names = current_names.reset_index().drop('index', axis=1).rename(columns={'name':'Seller', 'price':'Listings'})
-current_names.to_csv('current_names.csv')
+current_names.to_csv('.\\Dash Deployment\\current_names.csv')
