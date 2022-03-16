@@ -22,7 +22,7 @@ options = Options()
 options.add_argument('disable-infobars')
 options.add_argument('--incognito')
 options.add_argument("start-maximized")
-service = Service('C:/Users/v-cbarger/Downloads/chromedriver_win32/chromedriver.exe')
+service = Service('') #if you use this yourself, you'll need a path to a chromedriver (or fix the code so that you can use another driver, I don't judge)
 
 
 
