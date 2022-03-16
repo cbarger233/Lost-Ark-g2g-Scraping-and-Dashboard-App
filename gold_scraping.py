@@ -8,7 +8,8 @@ import os
 import re
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException      
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import ElementNotInteractableException 
 
 def check_exists_by_xpath(driver, xpath):
     try:
@@ -21,13 +22,13 @@ options = Options()
 options.add_argument('disable-infobars')
 options.add_argument('--incognito')
 options.add_argument("start-maximized")
-service = Service('insert path to your own chromedriver download')
+service = Service('C:/Users/v-cbarger/Downloads/chromedriver_win32/chromedriver.exe')
 
 
 
 
 def get_server_links():
-    driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome(service=service, options=options)
     URL = 'https://www.g2g.com/categories/lost-ark-gold'
 
     # initialize empty list to store links to visit to get data
@@ -115,27 +116,30 @@ for link in links:
             
             #scroll the buttons into view that we need to click
             driver.execute_script('arguments[0].scrollIntoView();', element)
-            driver.execute_script('window.scrollBy(0, -100);')
-            element.click()
-            time.sleep(4)
-            html = driver.page_source
-            soup = bs(html, features="html.parser")
-            offer_boxes = soup.find_all('div', class_='other_offer-desk-main-box other_offer-div-box')
+            driver.execute_script('window.scrollBy(0, -200);')
+            try:
+                element.click()
+                time.sleep(4)
+                html = driver.page_source
+                soup = bs(html, features="html.parser")
+                offer_boxes = soup.find_all('div', class_='other_offer-desk-main-box other_offer-div-box')
 
-            for box in offer_boxes:
-                name = box.find('div', class_='seller__name-detail').text.strip()
-                price = box.find('span', class_='offer-price-amount').text.strip()
-                price = re.sub(',', '', price)
-                price = float(price)
-                #some sellers have abnormally expensive prices listed, so this gets around that
-                if price > 1.2:
-                    continue
-            
-                dates.append(dt)
-                servers.append(server)
-                regions.append(region)
-                names.append(name)
-                prices.append(price)
+                for box in offer_boxes:
+                    name = box.find('div', class_='seller__name-detail').text.strip()
+                    price = box.find('span', class_='offer-price-amount').text.strip()
+                    price = re.sub(',', '', price)
+                    price = float(price)
+                    #some sellers have abnormally expensive prices listed, so this gets around that
+                    if price > 1.2:
+                        continue
+                
+                    dates.append(dt)
+                    servers.append(server)
+                    regions.append(region)
+                    names.append(name)
+                    prices.append(price)
+            except ElementNotInteractableException: #if something goes wrong, and the next page button is able to be clicked, this ensures the whole program doesn't crash
+                break
     else: #no additional pages
         print('Only one page!')
 
@@ -155,7 +159,7 @@ else:
 
 
 #getting data for global means and such
-df = pd.read_csv('gold_info.csv')
+df = pd.read_csv('.\\Dash Deployment\\gold_info.csv')
 df.date = pd.to_datetime(df.date)
 global_means = df.groupby(pd.Grouper(key='date', axis=0, freq='D'))['price'].mean()
 global_means = global_means.rename('mean')
